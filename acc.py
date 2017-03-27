@@ -10,7 +10,7 @@ import json
 from collections import Counter
 import ast
 
-lst_name = name.get()
+# lst_name = name.get()
 ###########################################
 client = MongoClient("ds023408.mlab.com", 23408)
 db = client['anhsang']
@@ -217,8 +217,10 @@ def get_q_vong3(URL, game_token):
 
 def findAns_and_save(acc):
     game_token = get_game_token(acc)
+    print (game_token)
     URL = get_port_game(game_token)
-    startGame(URL, game_token)
+    print (URL)
+    print (startGame(URL, game_token))
     new = 0
     for num in range(0, 20):
         try:
@@ -272,3 +274,5 @@ for acc_ne in list_acc:
 #     if save_acc():
 #         number_acc += 1
 #         print number_acc
+
+# findAns_and_save("yl288vw2")
