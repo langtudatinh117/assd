@@ -221,8 +221,8 @@ def findAns_and_save(acc):
     URL = get_port_game(game_token)
     print (URL)
     isWork = startGame(URL, game_token)
-    if json.loads(isWork)['code'] == "9":
-        return True
+    if json.loads(isWork)['code'] == 9:
+        return False
     new = 0
     for num in range(0, 20):
         try:
