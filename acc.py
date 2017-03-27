@@ -221,7 +221,7 @@ def findAns_and_save(acc):
     URL = get_port_game(game_token)
     print (URL)
     isWork = startGame(URL, game_token)
-    if isWork != '{"code":9,"mess":"Chưa đến thời gian thi hoặc đã hết số lần thi!","data":{"status":false}}':
+    if isWork == '{"code":9,"mess":"Chưa đến thời gian thi hoặc đã hết số lần thi!","data":{"status":false}}':
         return True
     new = 0
     for num in range(0, 20):
