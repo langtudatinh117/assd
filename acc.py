@@ -10,8 +10,9 @@ import re
 import json
 from collections import Counter
 import ast
+import time
 
-# lst_name = name.get()
+lst_name = name.get()
 ###########################################
 client = MongoClient("ds023408.mlab.com", 23408)
 db = client['anhsang']
@@ -63,12 +64,12 @@ def logout(token=get_token()):
         return False
 
 
-def login(id_user_pass, token=get_token()):
+def login(user, password, token=get_token()):
     logout()
     URL = "http://anhsangsoiduong.vn/dang-nhap.html"
     body = {
-        "_csrf": token, "LoginForm[username]": id_user_pass,
-        "LoginForm[password]:": id_user_pass,
+        "_csrf": token, "LoginForm[username]": user,
+        "LoginForm[password]:": password,
         "LoginForm[rememberMe]": "0",
         "LoginForm[rememberMe]": "1"
     }
@@ -159,10 +160,10 @@ def get_list_acc():
     return [acc['acc'] for acc in account.find()]
 
 
-def get_game_token(acc):
+def get_game_token(user, password):
     URL = "http://anhsangsoiduong.vn/assd/exam/play-exam"
     logout()
-    login(acc)
+    login(user, password)
     res = s.get(URL)
     bsObj = BeautifulSoup(res.content, 'lxml')
     token = bsObj.find('iframe').attrs['src']
@@ -190,8 +191,8 @@ def getQues(URL, game_token):
     return data
 
 
-def getAns(URL, game_token):
-    ans = s.get(URL + 'ans_ques&token=' + game_token + '&ans=0')
+def getAns(URL, game_token, ans_=0):
+    ans = s.get(URL + 'ans_ques&token=' + game_token + '&ans=' + str(ans_))
     return json.loads(ans.content)['data']
 
 
@@ -216,8 +217,21 @@ def get_q_vong3(URL, game_token):
     return s.get(URL + 'get_ques&token=' + game_token)
 
 
-def findAns_and_save(acc):
-    game_token = get_game_token(acc)
+def post_ans_12(URL, game_token):
+    for num in range(0, 20):
+        ques_and_ans = json.loads(s.get(URL + 'get_ques&token=' + game_token).content)['data']
+        ## find in database
+        doc = vong1_2.find_one({'ques': ques_and_ans['ques']})
+        # time.sleep(5)
+        if doc is not None:
+            ans_ = ques_and_ans['ans'].index(doc['ans'])
+            print getAns(URL, game_token, ans_)
+        else:
+            print getAns(URL, game_token)
+
+
+def findAns_and_save(user):
+    game_token = get_game_token(user, user)
     print (game_token)
     URL = get_port_game(game_token)
     print (URL)
@@ -264,6 +278,35 @@ def findAns_and_save(acc):
         s.headers = {'user-agent': 'Chrome/56.0.2924.87'}
 
 
+def do_it(user, password):
+    game_token = get_game_token(user, password)
+    URL = get_port_game(game_token)
+    isWork = startGame(URL, game_token)
+    print isWork
+    if json.loads(isWork)['code'] == 9:
+        return False
+    post_ans_12(URL, game_token)
+    continueGame(URL, game_token)
+    post_ans_12(URL, game_token)
+    continueGame(URL, game_token)
+    ques = s.get(URL + 'get_ques&token=' + game_token)
+    aList = json.loads(ques.content)['data']['a'][:15]
+    bList = json.loads(ques.content)['data']['b']
+    result_vong_3 = []
+    for item in aList:
+        doc = vong3.find_one({"a": item})
+        if doc is not None:
+            bTrongDB = ast.literal_eval(doc['b'])
+            result = list(filter(lambda x: bTrongDB[x] == max(bTrongDB.values()), bTrongDB))
+            for item_b in bList:
+                if item_b in result:
+                    result_vong_3.append(str(bList.index(item_b)))
+    print result_vong_3
+    time.sleep(60)
+    post_vong_3 = s.get(URL + 'ans_v3&token=' + game_token + '&ans=' + ",".join(result_vong_3))
+    print post_vong_3.content
+
+
 list_acc = get_list_acc()
 
 for acc_ne in list_acc:
@@ -279,3 +322,9 @@ for acc_ne in list_acc:
 #         print number_acc
 
 # findAns_and_save("yl288vw2")
+#
+# print reg()
+# update_info()
+
+
+# do_it('tienanhduong94', 'tienanhduong94')
